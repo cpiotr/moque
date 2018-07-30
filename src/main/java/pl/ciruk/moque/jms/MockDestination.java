@@ -17,7 +17,7 @@ import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
 import org.junit.jupiter.api.extension.BeforeTestExecutionCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-import javax.jms.ConnectionFactory;
+import javax.jms.*;
 import java.util.function.Predicate;
 
 public class MockDestination implements BeforeTestExecutionCallback, AfterTestExecutionCallback {
@@ -46,6 +46,17 @@ public class MockDestination implements BeforeTestExecutionCallback, AfterTestEx
         jmsServer.start();
 
         ConnectionFactory connectionFactory = (ConnectionFactory) jmsServer.lookup("/cf");
+        try (var connection = connectionFactory.createConnection()) {
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+            Queue q1 = session.createQueue(queue1);
+            MessageConsumer consumer = session.createConsumer(q1);
+            consumer.setMessageListener(message -> System.out.println("Listener: " + message));
+            session.setMessageListener(message -> System.out.println("Session: " + message));
+
+            session.createProducer(q1).send(session.createTextMessage("fdfs"));
+            System.out.println(1);
+            session.close();
+        }
 
         context.getStore(ExtensionContext.Namespace.create("moque")).put("jmsServer", jmsServer);
     }
