@@ -1,10 +1,9 @@
 package pl.ciruk.moque.jms;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-import static org.junit.jupiter.api.Assertions.*;
+import javax.jms.TextMessage;
 
 class MockDestinationTest {
     @RegisterExtension
@@ -12,6 +11,7 @@ class MockDestinationTest {
 
     @Test
     void shouldRunServer() throws InterruptedException {
+        mockDestination.whenReceived("Q1", message -> message instanceof TextMessage);
         Thread.sleep(5_000);
     }
 }

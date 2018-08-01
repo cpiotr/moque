@@ -84,7 +84,7 @@ public class MockDestination implements BeforeTestExecutionCallback, AfterTestEx
         jmsServer.stop();
     }
 
-    public <T> void whenReceived(String queueName, Predicate<T> messageMatcher) {
-
+    public <T> WhenReceived<T> whenReceived(String queueName, Predicate<T> messageMatcher) {
+        return null;
     }
 }
