@@ -11,7 +11,8 @@ class MockDestinationTest {
 
     @Test
     void shouldRunServer() throws InterruptedException {
-        mockDestination.whenReceived("Q1", message -> message instanceof TextMessage);
+        mockDestination.whenReceived("Q1", message -> message instanceof TextMessage)
+                .thenConsume(System.out::println);
         Thread.sleep(5_000);
     }
 }

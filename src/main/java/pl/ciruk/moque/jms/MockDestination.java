@@ -21,6 +21,8 @@ import javax.jms.*;
 import java.util.function.Predicate;
 
 public class MockDestination implements BeforeTestExecutionCallback, AfterTestExecutionCallback {
+    private Gateway<TextMessage> jmsGateway;
+
     @Override
     public void beforeTestExecution(ExtensionContext context) throws Exception {
         Configuration configuration = new ConfigurationImpl();
@@ -47,15 +49,43 @@ public class MockDestination implements BeforeTestExecutionCallback, AfterTestEx
 
         ConnectionFactory connectionFactory = (ConnectionFactory) jmsServer.lookup("/cf");
         try (var connection = connectionFactory.createConnection()) {
+            connection.start();
+
             Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue q1 = session.createQueue(queue1);
+
+
             MessageConsumer consumer = session.createConsumer(q1);
             consumer.setMessageListener(message -> System.out.println("Listener: " + message));
             session.setMessageListener(message -> System.out.println("Session: " + message));
 
-            session.createProducer(q1).send(session.createTextMessage("fdfs"));
             System.out.println(1);
+            TextMessage textMessage = session.createTextMessage("fdfs");
+            MessageProducer producer = session.createProducer(q1);
+            producer.send(textMessage);
+            producer.close();
             session.close();
+
+            jmsGateway = new Gateway<>() {
+                @Override
+                public void receive(String destination, TextMessage message) {
+                    try {
+                        MessageConsumer messageConsumer = session.createConsumer(session.createQueue(destination));
+                        messageConsumer.receive();
+                    } catch (JMSException e) {
+                        e.printStackTrace();
+                    }
+                }
+
+                @Override
+                public void send(String destination, String message) {
+                    try (MessageProducer producer = session.createProducer(session.createQueue(destination))) {
+                        producer.send(session.createTextMessage(message));
+                    } catch (JMSException e) {
+                        e.printStackTrace();
+                    }
+                }
+            };
         }
 
         context.getStore(ExtensionContext.Namespace.create("moque")).put("jmsServer", jmsServer);
@@ -84,7 +114,16 @@ public class MockDestination implements BeforeTestExecutionCallback, AfterTestEx
         jmsServer.stop();
     }
 
-    public <T> WhenReceived<T> whenReceived(String queueName, Predicate<T> messageMatcher) {
-        return null;
+    public WhenReceived<TextMessage> whenReceived(String queueName, Predicate<TextMessage> messageMatcher) {
+        new MessageListener() {
+            @Override
+            public void onMessage(Message message) {
+
+            }
+        };
+        return new WhenReceived<>(jmsGateway, messageMatcher);
     }
+
+
+
 }
