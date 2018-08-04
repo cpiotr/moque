@@ -1,19 +1,17 @@
-package pl.ciruk.moque.jms;
+package pl.ciruk.moque;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Predicate;
 
-class WhenReceived<T> {
+public class WhenReceived<T> {
     private final Gateway<T> gateway;
 
-    private final Predicate<T> messageMatcher;
+    private final ThrowingPredicate<T> messageMatcher;
 
-    private final List<Consumer<T>> consumers = new ArrayList<>();
+    private final List<ThrowingConsumer<T>> consumers = new ArrayList<>();
 
-    WhenReceived(Gateway<T> mockDestination, Predicate<T> messageMatcher) {
+    public WhenReceived(Gateway<T> mockDestination, ThrowingPredicate<T> messageMatcher) {
         this.gateway = mockDestination;
         this.messageMatcher = messageMatcher;
     }
@@ -33,14 +31,24 @@ class WhenReceived<T> {
         return this;
     }
 
-    public WhenReceived<T> thenConsume(Consumer<T> messageConsumer) {
+    public WhenReceived<T> thenConsume(ThrowingConsumer<T> messageConsumer) {
         consumers.add(messageConsumer);
         return this;
     }
 
     public void onMessage(T message) {
-        if (messageMatcher.test(message)) {
-            consumers.forEach(c -> c.accept(message));
+        try {
+            if (messageMatcher.test(message)) {
+                consumers.forEach(consumer -> {
+                    try {
+                        consumer.accept(message);
+                    } catch (Exception e) {
+                        throw new AssertionError(e);
+                    }
+                });
+            }
+        } catch (Exception e) {
+            throw new AssertionError(e);
         }
     }
 }

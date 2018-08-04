@@ -1,4 +1,4 @@
-package pl.ciruk.moque.jms;
+package pl.ciruk.moque;
 
 public interface Gateway<T> {
     void receive(String destination, T message);

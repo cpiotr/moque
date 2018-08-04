@@ -16,12 +16,14 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
 import org.junit.jupiter.api.extension.BeforeTestExecutionCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
+import pl.ciruk.moque.Gateway;
+import pl.ciruk.moque.ThrowingPredicate;
+import pl.ciruk.moque.WhenReceived;
 
 import javax.jms.*;
 import java.lang.IllegalStateException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Predicate;
 
 public class MockDestination implements BeforeTestExecutionCallback, AfterTestExecutionCallback {
     private Gateway<TextMessage> jmsGateway;
@@ -124,9 +126,13 @@ public class MockDestination implements BeforeTestExecutionCallback, AfterTestEx
         jmsServer.stop();
     }
 
-    public WhenReceived<TextMessage> whenReceived(String queueName, Predicate<TextMessage> messageMatcher) {
-        WhenReceived<TextMessage> whenReceived = listeners.computeIfAbsent(queueName, __ -> new WhenReceived<>(jmsGateway, messageMatcher));
+    public WhenReceived<TextMessage> whenReceived(String queueName, ThrowingPredicate<TextMessage> messageMatcher) {
+        return listeners.computeIfAbsent(queueName, __ -> createConsumer(queueName, messageMatcher));
+    }
 
+    @NotNull
+    private WhenReceived<TextMessage> createConsumer(String queueName, ThrowingPredicate<TextMessage> messageMatcher) {
+        WhenReceived<TextMessage> whenReceived = new WhenReceived<>(jmsGateway, messageMatcher);
         try {
             MessageConsumer consumer = session.createConsumer(session.createQueue(queueName));
             consumer.setMessageListener(message -> whenReceived.onMessage((TextMessage) message));

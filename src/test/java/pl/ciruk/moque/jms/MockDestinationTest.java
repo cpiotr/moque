@@ -3,7 +3,6 @@ package pl.ciruk.moque.jms;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-import javax.jms.JMSException;
 import javax.jms.TextMessage;
 
 class MockDestinationTest {
@@ -11,16 +10,11 @@ class MockDestinationTest {
     static MockDestination mockDestination = new MockDestination();
 
     @Test
-    void shouldRunServer() throws InterruptedException {
+    void shouldRunServer() {
         mockDestination.whenReceived("Q1", message -> message instanceof TextMessage)
-                .thenConsume(textMessage -> {
-                    try {
-                        System.out.println(textMessage.getText());
-                    } catch (JMSException e) {
-                        e.printStackTrace();
-                    }
-                })
+                .thenConsume(textMessage -> System.out.println(textMessage.getText()))
                 .thenSend("Q314", "Hi there");
-        Thread.sleep(5_000);
+        mockDestination.whenReceived("Q1", textMessage -> textMessage.getText().startsWith("f"))
+                .thenConsume(textMessage -> System.out.println("Welp"));
     }
 }
