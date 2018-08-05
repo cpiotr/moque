@@ -7,15 +7,11 @@ import org.apache.activemq.artemis.core.remoting.impl.netty.NettyAcceptorFactory
 import org.apache.activemq.artemis.core.remoting.impl.netty.NettyConnectorFactory;
 import org.apache.activemq.artemis.jms.server.config.ConnectionFactoryConfiguration;
 import org.apache.activemq.artemis.jms.server.config.JMSConfiguration;
-import org.apache.activemq.artemis.jms.server.config.JMSQueueConfiguration;
 import org.apache.activemq.artemis.jms.server.config.impl.ConnectionFactoryConfigurationImpl;
 import org.apache.activemq.artemis.jms.server.config.impl.JMSConfigurationImpl;
-import org.apache.activemq.artemis.jms.server.config.impl.JMSQueueConfigurationImpl;
 import org.apache.activemq.artemis.jms.server.embedded.EmbeddedJMS;
 import org.jetbrains.annotations.NotNull;
-import org.junit.jupiter.api.extension.AfterTestExecutionCallback;
-import org.junit.jupiter.api.extension.BeforeTestExecutionCallback;
-import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.*;
 import pl.ciruk.moque.Gateway;
 import pl.ciruk.moque.ThrowingPredicate;
 import pl.ciruk.moque.WhenReceived;
@@ -25,13 +21,13 @@ import java.lang.IllegalStateException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MockDestination implements BeforeTestExecutionCallback, AfterTestExecutionCallback {
+public class MockDestination implements BeforeAllCallback, AfterAllCallback, BeforeEachCallback, AfterEachCallback {
     private Gateway<TextMessage> jmsGateway;
     private Connection connection;
-    private Session session;
+    private Map<String, GatewayConsumer<TextMessage>> listeners = new HashMap<>();
 
     @Override
-    public void beforeTestExecution(ExtensionContext context) throws Exception {
+    public void beforeAll(ExtensionContext context) throws Exception {
         Configuration configuration = new ConfigurationImpl();
         configuration.setPersistenceEnabled(false);
         configuration.setSecurityEnabled(false);
@@ -45,10 +41,6 @@ public class MockDestination implements BeforeTestExecutionCallback, AfterTestEx
         ConnectionFactoryConfiguration cfConfig = createConnectionFactoryConfiguration();
         jmsConfig.getConnectionFactoryConfigurations().add(cfConfig);
 
-        String queue1 = "Q1";
-        JMSQueueConfiguration queueConfig = createQueueConfiguration(queue1);
-        jmsConfig.getQueueConfigurations().add(queueConfig);
-
         EmbeddedJMS jmsServer = new EmbeddedJMS();
         jmsServer.setConfiguration(configuration);
         jmsServer.setJmsConfiguration(jmsConfig);
@@ -58,43 +50,7 @@ public class MockDestination implements BeforeTestExecutionCallback, AfterTestEx
         connection = connectionFactory.createConnection();
         connection.start();
 
-        session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
-        Queue q1 = session.createQueue(queue1);
-
-
-        MessageConsumer consumer = session.createConsumer(session.createQueue("Q314"));
-        consumer.setMessageListener(message -> System.out.println("Listener: " + message));
-        session.setMessageListener(message -> System.out.println("Session: " + message));
-
-        System.out.println(1);
-        TextMessage textMessage = session.createTextMessage("fdfs");
-        MessageProducer producer = session.createProducer(q1);
-        producer.send(textMessage);
-        producer.close();
-
-        jmsGateway = new Gateway<>() {
-            @Override
-            public void receive(String destination, TextMessage message) {
-                try {
-                    MessageConsumer messageConsumer = session.createConsumer(session.createQueue(destination));
-                    messageConsumer.receive();
-                } catch (JMSException e) {
-                    e.printStackTrace();
-                }
-            }
-
-            @Override
-            public void send(String destination, String message) {
-                try (MessageProducer producer = session.createProducer(session.createQueue(destination))) {
-                    producer.send(session.createTextMessage(message));
-                } catch (JMSException e) {
-                    e.printStackTrace();
-                }
-            }
-        };
-
         findStore(context).put("jmsServer", jmsServer);
-        findStore(context).put("session", session);
     }
 
     private ExtensionContext.Store findStore(ExtensionContext context) {
@@ -110,38 +66,62 @@ public class MockDestination implements BeforeTestExecutionCallback, AfterTestEx
         return cfConfig;
     }
 
-    @NotNull
-    private JMSQueueConfiguration createQueueConfiguration(String name) {
-        JMSQueueConfiguration queueConfig = new JMSQueueConfigurationImpl();
-        queueConfig.setName(name);
-        queueConfig.setName(name);
-        return queueConfig;
-    }
-
     @Override
-    public void afterTestExecution(ExtensionContext context) throws Exception {
-        session.close();
+    public void afterAll(ExtensionContext context) throws Exception {
         connection.close();
         EmbeddedJMS jmsServer = findStore(context).get("jmsServer", EmbeddedJMS.class);
         jmsServer.stop();
     }
 
     public WhenReceived<TextMessage> whenReceived(String queueName, ThrowingPredicate<TextMessage> messageMatcher) {
-        return listeners.computeIfAbsent(queueName, __ -> createConsumer(queueName, messageMatcher));
+        GatewayConsumer<TextMessage> gatewayConsumer = listeners.computeIfAbsent(queueName, __ -> createConsumer(queueName, messageMatcher));
+
+        return gatewayConsumer.getWhenReceived();
+    }
+
+    public void send(String queueName, String message) {
+        jmsGateway.send(queueName, message);
     }
 
     @NotNull
-    private WhenReceived<TextMessage> createConsumer(String queueName, ThrowingPredicate<TextMessage> messageMatcher) {
+    private GatewayConsumer<TextMessage> createConsumer(String queueName, ThrowingPredicate<TextMessage> messageMatcher) {
+        var session = createSession();
+        JmsGateway jmsGateway = new JmsGateway(session);
         WhenReceived<TextMessage> whenReceived = new WhenReceived<>(jmsGateway, messageMatcher);
         try {
             MessageConsumer consumer = session.createConsumer(session.createQueue(queueName));
             consumer.setMessageListener(message -> whenReceived.onMessage((TextMessage) message));
+            return new GatewayConsumer<>(consumer, whenReceived);
         } catch (JMSException e) {
             throw new IllegalStateException(e);
         }
-        return whenReceived;
     }
 
-    private Map<String, WhenReceived<TextMessage>> listeners = new HashMap<>();
+    private Session createSession() {
+        try {
+            return connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+        } catch (JMSException e) {
+            throw new AssertionError(e);
+        }
+    }
 
+    @Override
+    public void beforeEach(ExtensionContext context) {
+        var session = createSession();
+
+        jmsGateway = new JmsGateway(session);
+    }
+
+    @Override
+    public void afterEach(ExtensionContext context) throws Exception {
+        jmsGateway.close();
+        for (var gatewayConsumer : listeners.values()) {
+            gatewayConsumer.close();
+        }
+        listeners.clear();
+    }
+
+    public TextMessage receiveFrom(String queueName) {
+        return jmsGateway.receive(queueName);
+    }
 }
