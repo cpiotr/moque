@@ -21,7 +21,7 @@ import java.lang.IllegalStateException;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MockDestination implements BeforeAllCallback, AfterAllCallback, BeforeEachCallback, AfterEachCallback {
+public class JmsMoque implements BeforeAllCallback, AfterAllCallback, BeforeEachCallback, AfterEachCallback {
     private Gateway<TextMessage> jmsGateway;
     private Connection connection;
     private Map<String, GatewayConsumer<TextMessage>> listeners = new HashMap<>();
@@ -54,7 +54,7 @@ public class MockDestination implements BeforeAllCallback, AfterAllCallback, Bef
     }
 
     private ExtensionContext.Store findStore(ExtensionContext context) {
-        return context.getStore(ExtensionContext.Namespace.create(MockDestination.class));
+        return context.getStore(ExtensionContext.Namespace.create(JmsMoque.class));
     }
 
     @NotNull

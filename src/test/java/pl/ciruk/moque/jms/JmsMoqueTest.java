@@ -11,11 +11,11 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTimeout;
 
-class MockDestinationTest {
+class JmsMoqueTest {
     private static final String QUEUE_NAME = "Q1";
 
     @RegisterExtension
-    static final MockDestination MOQUE = new MockDestination();
+    static final JmsMoque MOQUE = new JmsMoque();
 
     @Test
     void shouldRegisterMultipleConsumersWithDifferentPredicates() {
