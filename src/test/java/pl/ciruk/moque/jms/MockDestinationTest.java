@@ -3,38 +3,46 @@ package pl.ciruk.moque.jms;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-import javax.jms.JMSException;
 import javax.jms.TextMessage;
+import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTimeout;
 
 class MockDestinationTest {
+    private static final String QUEUE_NAME = "Q1";
+
     @RegisterExtension
-    static MockDestination mockDestination = new MockDestination();
+    static final MockDestination MOQUE = new MockDestination();
 
     @Test
-    void shouldRunServer() throws JMSException {
-        mockDestination.whenReceived("Q1", message -> message instanceof TextMessage)
-                .thenConsume(textMessage -> System.out.println(textMessage.getText()))
-                .thenSend("Q314", "Hi there");
-        mockDestination.whenReceived("Q1", textMessage -> textMessage.getText().startsWith("f"))
-                .thenConsume(textMessage -> System.out.println("Welp"));
+    void shouldRegisterMultipleConsumersWithDifferentPredicates() {
+        List<String> received = new ArrayList<>();
+        List<String> messagesStartingWithOne = new ArrayList<>();
+        MOQUE.whenReceived(QUEUE_NAME, message -> true)
+                .thenConsume(message -> received.add(message.getText()));
+        MOQUE.whenReceived(QUEUE_NAME, message -> message.getText().startsWith("1"))
+                .thenConsume(textMessage -> messagesStartingWithOne.add(textMessage.getText()));
 
-        mockDestination.send("Q1", "First");
+        MOQUE.send(QUEUE_NAME, "First");
 
-        TextMessage message = mockDestination.receiveFrom("Q314");
-        System.out.println(message.getText());
+        assertThat(received).containsExactly("First");
+        assertThat(messagesStartingWithOne).isEmpty();
     }
 
     @Test
-    void shouldRunServer2() throws JMSException {
-        mockDestination.whenReceived("Q1", message -> message instanceof TextMessage)
-                .thenConsume(textMessage -> System.out.println(textMessage.getText()))
-                .thenSend("Q314", "Hi there");
-        mockDestination.whenReceived("Q1", textMessage -> textMessage.getText().startsWith("f"))
-                .thenConsume(textMessage -> System.out.println("Welp"));
+    void shouldRespondToDifferentQueue() {
+        assertTimeout(Duration.ofSeconds(10), () -> {
+            String responseQueue = "Q314";
+            MOQUE.whenReceived(QUEUE_NAME, message -> true)
+                    .thenSend(responseQueue, "Response");
 
-        mockDestination.send("Q1", "Second");
+            MOQUE.send(QUEUE_NAME, "Trigger");
 
-        TextMessage message = mockDestination.receiveFrom("Q314");
-        System.out.println(message.getText());
+            TextMessage message = MOQUE.receiveFrom(responseQueue);
+            assertThat(message.getText()).isEqualTo("Response");
+        });
     }
 }
