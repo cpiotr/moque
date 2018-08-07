@@ -74,9 +74,13 @@ public class JmsMoque implements BeforeAllCallback, AfterAllCallback, BeforeEach
     }
 
     public WhenReceived<TextMessage> whenReceived(String queueName, ThrowingPredicate<TextMessage> messageMatcher) {
-        GatewayConsumer<TextMessage> gatewayConsumer = listeners.computeIfAbsent(queueName, __ -> createConsumer(queueName, messageMatcher));
+        var session = createSession();
+        GatewayConsumer<TextMessage> gatewayConsumer = listeners.computeIfAbsent(queueName, __ -> createConsumer(queueName, session));
 
-        return gatewayConsumer.getWhenReceived();
+        WhenReceived<TextMessage> whenReceived = new WhenReceived<>(new JmsGateway(session), messageMatcher);
+        gatewayConsumer.addWhenReceivedPredicate(whenReceived);
+
+        return whenReceived;
     }
 
     public void send(String queueName, String message) {
@@ -84,14 +88,12 @@ public class JmsMoque implements BeforeAllCallback, AfterAllCallback, BeforeEach
     }
 
     @NotNull
-    private GatewayConsumer<TextMessage> createConsumer(String queueName, ThrowingPredicate<TextMessage> messageMatcher) {
-        var session = createSession();
-        JmsGateway jmsGateway = new JmsGateway(session);
-        WhenReceived<TextMessage> whenReceived = new WhenReceived<>(jmsGateway, messageMatcher);
+    private GatewayConsumer<TextMessage> createConsumer(String queueName, Session session) {
         try {
             MessageConsumer consumer = session.createConsumer(session.createQueue(queueName));
-            consumer.setMessageListener(message -> whenReceived.onMessage((TextMessage) message));
-            return new GatewayConsumer<>(consumer, whenReceived);
+            GatewayConsumer<TextMessage> gatewayConsumer = new GatewayConsumer<>(consumer);
+            consumer.setMessageListener(message -> gatewayConsumer.onMessage((TextMessage) message));
+            return gatewayConsumer;
         } catch (JMSException e) {
             throw new IllegalStateException(e);
         }
