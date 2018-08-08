@@ -3,6 +3,7 @@ package pl.ciruk.moque.jms;
 import pl.ciruk.moque.Gateway;
 
 import javax.jms.*;
+import java.util.concurrent.TimeUnit;
 
 class JmsGateway implements Gateway<TextMessage> {
     private final Session session;
@@ -16,6 +17,16 @@ class JmsGateway implements Gateway<TextMessage> {
         try {
             MessageConsumer messageConsumer = session.createConsumer(session.createQueue(destination));
             return (TextMessage) messageConsumer.receive();
+        } catch (JMSException e) {
+            throw new AssertionError(e);
+        }
+    }
+
+    @Override
+    public TextMessage receiveWithTimeout(String destination, long time, TimeUnit timeUnit) {
+        try {
+            MessageConsumer messageConsumer = session.createConsumer(session.createQueue(destination));
+            return (TextMessage) messageConsumer.receive(timeUnit.toMillis(time));
         } catch (JMSException e) {
             throw new AssertionError(e);
         }
