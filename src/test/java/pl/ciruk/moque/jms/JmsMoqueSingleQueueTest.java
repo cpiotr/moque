@@ -3,10 +3,11 @@ package pl.ciruk.moque.jms;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-import javax.jms.TextMessage;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertTimeout;
@@ -33,16 +34,15 @@ class JmsMoqueSingleQueueTest {
     }
 
     @Test
-    void shouldRespondToDifferentQueue() {
+    void shouldCountDownWhenReceived() {
         assertTimeout(Duration.ofSeconds(10), () -> {
-            String responseQueue = "Q314";
+            CountDownLatch latch = new CountDownLatch(1);
             MOQUE.whenReceived(QUEUE_NAME, message -> true)
-                    .thenSend(responseQueue, "Response");
+                    .thenDo(latch::countDown);
 
             MOQUE.send(QUEUE_NAME, "Trigger");
 
-            TextMessage message = MOQUE.receiveFrom(responseQueue);
-            assertThat(message.getText()).isEqualTo("Response");
+            assertThat(latch.await(100, TimeUnit.MILLISECONDS)).isTrue();
         });
     }
 }
