@@ -1,17 +1,17 @@
 package pl.ciruk.moque.jms;
 
+import pl.ciruk.moque.ThrowingRunnable;
 import pl.ciruk.moque.WhenReceived;
 
-import javax.jms.MessageConsumer;
 import java.util.ArrayList;
 import java.util.List;
 
 class GatewayConsumer<T> implements AutoCloseable {
-    private final MessageConsumer messageConsumer;
+    private final ThrowingRunnable closeActionHandler;
     private final List<WhenReceived<T>> whenReceivedPredicates = new ArrayList<>();
 
-    GatewayConsumer(MessageConsumer messageConsumer) {
-        this.messageConsumer = messageConsumer;
+    GatewayConsumer(ThrowingRunnable closeActionHandler) {
+        this.closeActionHandler = closeActionHandler;
     }
 
     void addWhenReceivedPredicate(WhenReceived<T> whenReceived) {
@@ -24,6 +24,6 @@ class GatewayConsumer<T> implements AutoCloseable {
 
     @Override
     public void close() throws Exception {
-        messageConsumer.close();
+        closeActionHandler.run();
     }
 }

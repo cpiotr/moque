@@ -81,7 +81,7 @@ public class JmsMoque implements BeforeAllCallback, AfterAllCallback, BeforeEach
     private GatewayConsumer<TextMessage> createConsumer(String queueName, Session session) {
         try {
             MessageConsumer consumer = session.createConsumer(session.createQueue(queueName));
-            GatewayConsumer<TextMessage> gatewayConsumer = new GatewayConsumer<>(consumer);
+            GatewayConsumer<TextMessage> gatewayConsumer = new GatewayConsumer<>(consumer::close);
             consumer.setMessageListener(message -> gatewayConsumer.onMessage((TextMessage) message));
             return gatewayConsumer;
         } catch (JMSException e) {
