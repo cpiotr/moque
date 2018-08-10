@@ -2,6 +2,7 @@ package pl.ciruk.moque.jms;
 
 import org.junit.jupiter.api.extension.*;
 import pl.ciruk.moque.Gateway;
+import pl.ciruk.moque.GatewayConsumer;
 import pl.ciruk.moque.ThrowingPredicate;
 import pl.ciruk.moque.WhenReceived;
 
@@ -61,7 +62,7 @@ public class JmsMoque implements BeforeAllCallback, AfterAllCallback, BeforeEach
         GatewayConsumer<TextMessage> gatewayConsumer = listeners.computeIfAbsent(queueName, __ -> createConsumer(queueName, session));
 
         WhenReceived<TextMessage> whenReceived = new WhenReceived<>(new JmsGateway(session), messageMatcher);
-        gatewayConsumer.addWhenReceivedPredicate(whenReceived);
+        gatewayConsumer.addWhenReceivedRule(whenReceived);
 
         return whenReceived;
     }

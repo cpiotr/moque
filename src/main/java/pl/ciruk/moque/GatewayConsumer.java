@@ -1,24 +1,21 @@
-package pl.ciruk.moque.jms;
-
-import pl.ciruk.moque.ThrowingRunnable;
-import pl.ciruk.moque.WhenReceived;
+package pl.ciruk.moque;
 
 import java.util.ArrayList;
 import java.util.List;
 
-class GatewayConsumer<T> implements AutoCloseable {
+public class GatewayConsumer<T> implements AutoCloseable {
     private final ThrowingRunnable closeActionHandler;
     private final List<WhenReceived<T>> whenReceivedPredicates = new ArrayList<>();
 
-    GatewayConsumer(ThrowingRunnable closeActionHandler) {
+    public GatewayConsumer(ThrowingRunnable closeActionHandler) {
         this.closeActionHandler = closeActionHandler;
     }
 
-    void addWhenReceivedPredicate(WhenReceived<T> whenReceived) {
+    public void addWhenReceivedRule(WhenReceived<T> whenReceived) {
         whenReceivedPredicates.add(whenReceived);
     }
 
-    void onMessage(T message) {
+    public void onMessage(T message) {
         whenReceivedPredicates.forEach(whenReceived -> whenReceived.onMessage(message));
     }
 
