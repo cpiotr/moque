@@ -16,7 +16,7 @@ class JmsMoqueSingleQueueTest {
     private static final String QUEUE_NAME = "Q1";
 
     @RegisterExtension
-    static final JmsMoque MOQUE = new JmsMoque();
+    static final JmsMoque MOQUE = JmsMoque.withEmbeddedServer();
 
     @Test
     void shouldRegisterMultipleConsumersWithDifferentPredicates() {

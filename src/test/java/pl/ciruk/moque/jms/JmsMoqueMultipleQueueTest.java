@@ -17,7 +17,7 @@ class JmsMoqueMultipleQueueTest {
     private static final String THIRD_RESPONSE_QUEUE = "SecondResponseQueue";
 
     @RegisterExtension
-    static final JmsMoque MOQUE = new JmsMoque();
+    static final JmsMoque MOQUE = JmsMoque.withEmbeddedServer();
 
     @Test
     void shouldRespondToMultipleQueuesWhenMatchingPredicates() {

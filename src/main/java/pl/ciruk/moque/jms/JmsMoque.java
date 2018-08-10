@@ -1,10 +1,7 @@
 package pl.ciruk.moque.jms;
 
 import org.junit.jupiter.api.extension.*;
-import pl.ciruk.moque.Gateway;
-import pl.ciruk.moque.GatewayConsumer;
-import pl.ciruk.moque.ThrowingPredicate;
-import pl.ciruk.moque.WhenReceived;
+import pl.ciruk.moque.*;
 
 import javax.jms.*;
 import java.lang.IllegalStateException;
@@ -13,20 +10,28 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 public class JmsMoque implements BeforeAllCallback, AfterAllCallback, BeforeEachCallback, AfterEachCallback {
-    private final EmbeddedServer server;
+    private final ConnectionSupplier<Connection> connectionSupplier;
     private Connection connection;
     private Gateway<TextMessage> jmsGateway;
     private Map<String, GatewayConsumer<TextMessage>> listeners = new HashMap<>();
 
-    public JmsMoque() {
-        server = new EmbeddedServer();
+    private JmsMoque(ConnectionSupplier<Connection> connectionSupplier) {
+        this.connectionSupplier = connectionSupplier;
+    }
+
+    public static JmsMoque withEmbeddedServer() {
+        return withConnectionSupplier(new EmbeddedConnectionSupplier());
+    }
+
+    public static JmsMoque withConnectionSupplier(ConnectionSupplier<Connection> connectionSupplier) {
+        return new JmsMoque(connectionSupplier);
     }
 
     @Override
     public void beforeAll(ExtensionContext context) {
-        server.start();
+        connectionSupplier.beforeAll(context);
 
-        connection = server.connect();
+        connection = connectionSupplier.get();
     }
 
 
@@ -37,7 +42,7 @@ public class JmsMoque implements BeforeAllCallback, AfterAllCallback, BeforeEach
         } catch (JMSException e) {
             throw new AssertionError(e);
         } finally {
-            server.close();
+            connectionSupplier.afterAll(context);
         }
     }
 
