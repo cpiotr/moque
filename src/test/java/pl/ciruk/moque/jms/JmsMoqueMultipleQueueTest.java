@@ -58,14 +58,14 @@ class JmsMoqueMultipleQueueTest {
             MOQUE.whenReceived(QUEUE_NAME, message -> true)
                     .thenSend(FIRST_RESPONSE_QUEUE, "FirstResponse");
             MOQUE.whenReceived(QUEUE_NAME, message -> true)
-                    .thenSend(SECOND_RESPONSE_QUEUE, "SecondResponse");
+                    .thenSend(SECOND_RESPONSE_QUEUE, textMessage -> "SecondResponse to: " +  textMessage.getText());
 
             MOQUE.send(QUEUE_NAME, "Trigger");
 
             assertThat(MOQUE.receive(FIRST_RESPONSE_QUEUE))
                     .hasText("FirstResponse");
             assertThat(MOQUE.receive(SECOND_RESPONSE_QUEUE))
-                    .hasText("SecondResponse");
+                    .hasText("SecondResponse to: Trigger");
         });
     }
 

@@ -21,9 +21,13 @@ public class WhenReceived<T> {
         return this;
     }
 
-    public WhenReceived<T> thenSend(String destination, Function<T, String> messageOperator) {
+    public WhenReceived<T> thenSend(String destination, ThrowingFunction<T, String> messageOperator) {
         consumers.add(message -> gateway.send(destination, messageOperator.apply(message)));
         return this;
+    }
+
+    public WhenReceived<T> thenDoNothing() {
+        return thenDo(() -> {});
     }
 
     public WhenReceived<T> thenDo(Runnable runnable) {
