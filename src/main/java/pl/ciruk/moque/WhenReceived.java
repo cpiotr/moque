@@ -1,8 +1,11 @@
 package pl.ciruk.moque;
 
+import pl.ciruk.moque.function.ThrowingConsumer;
+import pl.ciruk.moque.function.ThrowingFunction;
+import pl.ciruk.moque.function.ThrowingPredicate;
+
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 
 public class WhenReceived<T> {
     private final Gateway<T> gateway;

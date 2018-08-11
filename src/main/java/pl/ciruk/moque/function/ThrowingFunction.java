@@ -1,4 +1,4 @@
-package pl.ciruk.moque;
+package pl.ciruk.moque.function;
 
 import java.util.function.Function;
 

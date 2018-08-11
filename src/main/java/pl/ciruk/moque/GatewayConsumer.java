@@ -1,5 +1,7 @@
 package pl.ciruk.moque;
 
+import pl.ciruk.moque.function.ThrowingRunnable;
+
 import java.util.ArrayList;
 import java.util.List;
 

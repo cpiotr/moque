@@ -1,4 +1,4 @@
-package pl.ciruk.moque;
+package pl.ciruk.moque.function;
 
 public interface ThrowingRunnable {
     void run() throws Exception;

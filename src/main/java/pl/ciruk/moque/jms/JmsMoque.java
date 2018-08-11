@@ -2,6 +2,7 @@ package pl.ciruk.moque.jms;
 
 import org.junit.jupiter.api.extension.*;
 import pl.ciruk.moque.*;
+import pl.ciruk.moque.function.ThrowingPredicate;
 
 import javax.jms.*;
 import java.lang.IllegalStateException;
