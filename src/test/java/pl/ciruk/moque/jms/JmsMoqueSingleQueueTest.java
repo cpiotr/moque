@@ -22,7 +22,7 @@ class JmsMoqueSingleQueueTest {
     void shouldRegisterMultipleConsumersWithDifferentPredicates() {
         List<String> received = new ArrayList<>();
         List<String> messagesStartingWithOne = new ArrayList<>();
-        MOQUE.whenReceived(QUEUE_NAME, message -> true)
+        MOQUE.whenReceived(QUEUE_NAME)
                 .thenConsume(message -> received.add(message.getText()));
         MOQUE.whenReceived(QUEUE_NAME, message -> message.getText().startsWith("1"))
                 .thenConsume(textMessage -> messagesStartingWithOne.add(textMessage.getText()));
@@ -37,7 +37,7 @@ class JmsMoqueSingleQueueTest {
     void shouldCountDownWhenReceived() {
         assertTimeout(Duration.ofSeconds(10), () -> {
             CountDownLatch latch = new CountDownLatch(1);
-            MOQUE.whenReceived(QUEUE_NAME, message -> true)
+            MOQUE.whenReceived(QUEUE_NAME)
                     .thenDo(latch::countDown);
 
             MOQUE.send(QUEUE_NAME, "Trigger");

@@ -22,7 +22,7 @@ class JmsMoqueMultipleQueueTest {
     @Test
     void shouldRespondToMultipleQueuesWhenMatchingPredicates() {
         assertTimeoutPreemptively(Duration.ofSeconds(10), () -> {
-            MOQUE.whenReceived(QUEUE_NAME, message -> true)
+            MOQUE.whenReceived(QUEUE_NAME)
                     .thenSend(FIRST_RESPONSE_QUEUE, "FirstResponse")
                     .thenSend(SECOND_RESPONSE_QUEUE,  "SecondResponse");
             MOQUE.whenReceived(QUEUE_NAME, message -> message.getText().startsWith("Content"))
@@ -42,7 +42,7 @@ class JmsMoqueMultipleQueueTest {
     @Test
     void shouldRespondToDifferentQueue() {
         assertTimeoutPreemptively(Duration.ofSeconds(10), () -> {
-            MOQUE.whenReceived(QUEUE_NAME, message -> true)
+            MOQUE.whenReceived(QUEUE_NAME)
                     .thenSend(FIRST_RESPONSE_QUEUE, "Response");
 
             MOQUE.send(QUEUE_NAME, "Trigger");
@@ -55,9 +55,9 @@ class JmsMoqueMultipleQueueTest {
     @Test
     void shouldRespondToMultipleQueues() {
         assertTimeoutPreemptively(Duration.ofSeconds(10), () -> {
-            MOQUE.whenReceived(QUEUE_NAME, message -> true)
+            MOQUE.whenReceived(QUEUE_NAME)
                     .thenSend(FIRST_RESPONSE_QUEUE, "FirstResponse");
-            MOQUE.whenReceived(QUEUE_NAME, message -> true)
+            MOQUE.whenReceived(QUEUE_NAME)
                     .thenSend(SECOND_RESPONSE_QUEUE, textMessage -> "SecondResponse to: " +  textMessage.getText());
 
             MOQUE.send(QUEUE_NAME, "Trigger");

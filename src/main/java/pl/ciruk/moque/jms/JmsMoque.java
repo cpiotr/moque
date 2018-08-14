@@ -63,6 +63,10 @@ public class JmsMoque implements BeforeAllCallback, AfterAllCallback, BeforeEach
         listeners.clear();
     }
 
+    public WhenReceived<TextMessage> whenReceived(String queueName) {
+        return whenReceived(queueName, __ -> true);
+    }
+
     public WhenReceived<TextMessage> whenReceived(String queueName, ThrowingPredicate<TextMessage> messageMatcher) {
         var session = createSession();
         GatewayConsumer<TextMessage> gatewayConsumer = listeners.computeIfAbsent(queueName, __ -> createConsumer(queueName, session));
