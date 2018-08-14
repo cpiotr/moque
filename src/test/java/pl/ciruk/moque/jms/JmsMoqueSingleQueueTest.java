@@ -34,6 +34,28 @@ class JmsMoqueSingleQueueTest {
     }
 
     @Test
+    void shouldTriggerAllConsumersWithMatchingPredicates() {
+        assertTimeout(Duration.ofSeconds(10), () -> {
+            CountDownLatch listenersTriggered = new CountDownLatch(2);
+            List<String> words = new ArrayList<>();
+            List<String> messagesStartingWithF = new ArrayList<>();
+            MOQUE.whenReceived(QUEUE_NAME, message -> message.getText().matches("\\w+"))
+                    .thenConsume(message -> words.add(message.getText()))
+                    .thenDo(listenersTriggered::countDown);
+            MOQUE.whenReceived(QUEUE_NAME, message -> message.getText().startsWith("F"))
+                    .thenConsume(textMessage -> messagesStartingWithF.add(textMessage.getText()))
+                    .thenDo(listenersTriggered::countDown);
+
+            String message = "First";
+            MOQUE.send(QUEUE_NAME, message);
+
+            assertThat(listenersTriggered.await(100, TimeUnit.MILLISECONDS)).isTrue();
+            assertThat(words).containsExactly(message);
+            assertThat(messagesStartingWithF).containsExactly(message);
+        });
+    }
+
+    @Test
     void shouldCountDownWhenReceived() {
         assertTimeout(Duration.ofSeconds(10), () -> {
             CountDownLatch latch = new CountDownLatch(1);
