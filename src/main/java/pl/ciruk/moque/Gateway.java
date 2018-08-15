@@ -9,4 +9,6 @@ public interface Gateway<T> extends AutoCloseable {
     TextMessage receiveWithTimeout(String destination, long time, TimeUnit timeUnit);
 
     void send(String destination, String message);
+
+    void send(String destination, byte[] message);
 }
