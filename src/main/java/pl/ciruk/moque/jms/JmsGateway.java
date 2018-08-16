@@ -39,16 +39,6 @@ class JmsGateway implements Gateway<TextMessage> {
         send(destination, () -> session.createTextMessage(message));
     }
 
-    @Override
-    public void send(String destination, byte[] message) {
-        ThrowingSupplier<Message> messageSupplier = () -> {
-            BytesMessage bytesMessage = session.createBytesMessage();
-            bytesMessage.writeBytes(message);
-            return bytesMessage;
-        };
-        send(destination, messageSupplier);
-    }
-
     private void send(String destination, ThrowingSupplier<Message> messageSupplier) {
         try (MessageProducer producer = session.createProducer(session.createQueue(destination))) {
             producer.send(messageSupplier.get());
