@@ -5,7 +5,6 @@ import pl.ciruk.moque.function.ThrowingSupplier;
 
 import javax.jms.*;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Supplier;
 
 class JmsGateway implements Gateway<TextMessage> {
     private final Session session;

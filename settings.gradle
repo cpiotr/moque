@@ -1,2 +1,3 @@
 rootProject.name = 'moque'
 
+include 'moque-core'
