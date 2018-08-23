@@ -14,9 +14,9 @@ public class MessageProcessor {
         this.jmsTemplate = jmsTemplate;
     }
 
-    @JmsListener(destination = "mailbox", containerFactory = "myFactory")
+    @JmsListener(destination = "mailbox")
     public void receiveMessage(String text) {
         System.out.println("Received: " + text);
-        jmsTemplate.convertAndSend("responseQueue", "Received: " + text);
+        jmsTemplate.convertAndSend("responseQueue", "Welp: " + text);
     }
 }

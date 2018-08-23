@@ -1,7 +1,10 @@
 package pl.ciruk.moque.jms;
 
 import org.junit.jupiter.api.extension.*;
-import pl.ciruk.moque.*;
+import pl.ciruk.moque.ConnectionSupplier;
+import pl.ciruk.moque.Gateway;
+import pl.ciruk.moque.GatewayConsumer;
+import pl.ciruk.moque.WhenReceived;
 import pl.ciruk.moque.function.ThrowingPredicate;
 
 import javax.jms.*;
@@ -33,6 +36,11 @@ public class JmsMoque implements BeforeAllCallback, AfterAllCallback, BeforeEach
         connectionSupplier.beforeAll(context);
 
         connection = connectionSupplier.get();
+        try {
+            connection.start();
+        } catch (JMSException e) {
+            throw new AssertionError(e);
+        }
     }
 
 

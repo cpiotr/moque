@@ -15,7 +15,7 @@ class EmbeddedConnectionSupplier implements ConnectionSupplier<Connection> {
 
     @Override
     public Connection get() {
-        return server.connect();
+        return server.createConnection();
     }
 
     @Override

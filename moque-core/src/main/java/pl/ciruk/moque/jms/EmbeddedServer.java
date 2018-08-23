@@ -43,12 +43,10 @@ public class EmbeddedServer implements AutoCloseable {
         }
     }
 
-    public Connection connect() {
+    public Connection createConnection() {
         ConnectionFactory connectionFactory = (ConnectionFactory) jms.lookup(CONNECTION_FACTORY_BINDING);
         try {
-            var connection = connectionFactory.createConnection();
-            connection.start();
-            return connection;
+            return connectionFactory.createConnection();
         } catch (JMSException e) {
             throw new AssertionError(e);
         }

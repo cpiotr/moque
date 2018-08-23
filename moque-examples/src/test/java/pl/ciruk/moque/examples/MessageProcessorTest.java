@@ -1,10 +1,11 @@
 package pl.ciruk.moque.examples;
 
 import org.assertj.core.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.*;
+import org.junit.jupiter.api.extension.AfterAllCallback;
+import org.junit.jupiter.api.extension.BeforeAllCallback;
+import org.junit.jupiter.api.extension.ExtensionContext;
+import org.junit.jupiter.api.extension.RegisterExtension;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.jms.core.JmsTemplate;
@@ -13,11 +14,8 @@ import pl.ciruk.moque.jms.JmsMoque;
 import javax.jms.Connection;
 import javax.jms.ConnectionFactory;
 import javax.jms.JMSException;
-
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class MessageProcessorTest {
 
@@ -31,8 +29,8 @@ class MessageProcessorTest {
     void shouldName() throws InterruptedException {
         CountDownLatch countDownLatch = new CountDownLatch(1);
         jmsMoque.whenReceived("responseQueue")
-                .thenDo(countDownLatch::countDown)
-                .thenConsume(textMessage -> System.out.println("Response: " + textMessage.getText()));
+                .thenConsume(textMessage -> System.out.println("Response: " + textMessage.getText()))
+                .thenDo(countDownLatch::countDown);
 
         springExtension.getJmsTemplate().convertAndSend("mailbox", "First message");
 
@@ -44,14 +42,14 @@ class MessageProcessorTest {
         private ConfigurableApplicationContext applicationContext;
 
         @Override
-        public void afterAll(ExtensionContext context) throws Exception {
+        public void afterAll(ExtensionContext context) {
             ExtensionContext.Store store = context.getStore(ExtensionContext.Namespace.GLOBAL);
             ConfigurableApplicationContext applicationContext = store.get("applicationContext", ConfigurableApplicationContext.class);
             applicationContext.close();
         }
 
         @Override
-        public void beforeAll(ExtensionContext context) throws Exception {
+        public void beforeAll(ExtensionContext context) {
             applicationContext = SpringApplication.run(Configuration.class);
             ExtensionContext.Store store = context.getStore(ExtensionContext.Namespace.GLOBAL);
             store.put("applicationContext", applicationContext);
