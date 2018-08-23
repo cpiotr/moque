@@ -1,6 +1,5 @@
 package pl.ciruk.moque.examples;
 
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.AfterAllCallback;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
@@ -17,6 +16,8 @@ import javax.jms.JMSException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 class MessageProcessorTest {
 
     @RegisterExtension
@@ -26,7 +27,7 @@ class MessageProcessorTest {
     static JmsMoque jmsMoque = JmsMoque.withConnectionSupplier(() -> springExtension.getConnection());
 
     @Test
-    void shouldName() throws InterruptedException {
+    void shouldRespondToAnotherQueue() throws InterruptedException {
         CountDownLatch countDownLatch = new CountDownLatch(1);
         jmsMoque.whenReceived("responseQueue")
                 .thenConsume(textMessage -> System.out.println("Response: " + textMessage.getText()))
@@ -34,7 +35,7 @@ class MessageProcessorTest {
 
         springExtension.getJmsTemplate().convertAndSend("mailbox", "First message");
 
-        Assertions.assertThat(countDownLatch.await(1, TimeUnit.SECONDS)).isTrue();
+        assertThat(countDownLatch.await(1, TimeUnit.SECONDS)).isTrue();
     }
 
     static class SpringExtension implements BeforeAllCallback, AfterAllCallback {
