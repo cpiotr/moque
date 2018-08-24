@@ -17,24 +17,24 @@ class JmsMoqueMultipleQueueTest {
     private static final String THIRD_RESPONSE_QUEUE = "SecondResponseQueue";
 
     @RegisterExtension
-    static final JmsMoque MOQUE = JmsMoque.withEmbeddedServer();
+    JmsMoque moque = JmsMoque.withEmbeddedServer();
 
     @Test
     void shouldRespondToMultipleQueuesWhenMatchingPredicates() {
         assertTimeoutPreemptively(Duration.ofSeconds(10), () -> {
-            MOQUE.whenReceived(QUEUE_NAME)
+            moque.whenReceived(QUEUE_NAME)
                     .thenSend(FIRST_RESPONSE_QUEUE, "FirstResponse")
                     .thenSend(SECOND_RESPONSE_QUEUE,  "SecondResponse");
-            MOQUE.whenReceived(QUEUE_NAME, message -> message.getText().startsWith("Content"))
+            moque.whenReceived(QUEUE_NAME, message -> message.getText().startsWith("Content"))
                     .thenSend(THIRD_RESPONSE_QUEUE,  "SecondResponse");
 
-            MOQUE.send(QUEUE_NAME, "Data");
+            moque.send(QUEUE_NAME, "Data");
 
-            assertThat(MOQUE.receive(FIRST_RESPONSE_QUEUE))
+            assertThat(moque.receive(FIRST_RESPONSE_QUEUE))
                     .hasText("FirstResponse");
-            assertThat(MOQUE.receive(SECOND_RESPONSE_QUEUE))
+            assertThat(moque.receive(SECOND_RESPONSE_QUEUE))
                     .hasText("SecondResponse");
-            assertThat(MOQUE.receiveWithTimeout(THIRD_RESPONSE_QUEUE, 1, TimeUnit.SECONDS))
+            assertThat(moque.receiveWithTimeout(THIRD_RESPONSE_QUEUE, 1, TimeUnit.SECONDS))
                     .isNull();
         });
     }
@@ -42,12 +42,12 @@ class JmsMoqueMultipleQueueTest {
     @Test
     void shouldRespondToDifferentQueue() {
         assertTimeoutPreemptively(Duration.ofSeconds(10), () -> {
-            MOQUE.whenReceived(QUEUE_NAME)
+            moque.whenReceived(QUEUE_NAME)
                     .thenSend(FIRST_RESPONSE_QUEUE, "Response");
 
-            MOQUE.send(QUEUE_NAME, "Trigger");
+            moque.send(QUEUE_NAME, "Trigger");
 
-            TextMessage message = MOQUE.receive(FIRST_RESPONSE_QUEUE);
+            TextMessage message = moque.receive(FIRST_RESPONSE_QUEUE);
             assertThat(message).hasText("Response");
         });
     }
@@ -55,16 +55,16 @@ class JmsMoqueMultipleQueueTest {
     @Test
     void shouldRespondToMultipleQueues() {
         assertTimeoutPreemptively(Duration.ofSeconds(10), () -> {
-            MOQUE.whenReceived(QUEUE_NAME)
+            moque.whenReceived(QUEUE_NAME)
                     .thenSend(FIRST_RESPONSE_QUEUE, "FirstResponse");
-            MOQUE.whenReceived(QUEUE_NAME)
+            moque.whenReceived(QUEUE_NAME)
                     .thenSend(SECOND_RESPONSE_QUEUE, textMessage -> "SecondResponse to: " +  textMessage.getText());
 
-            MOQUE.send(QUEUE_NAME, "Trigger");
+            moque.send(QUEUE_NAME, "Trigger");
 
-            assertThat(MOQUE.receive(FIRST_RESPONSE_QUEUE))
+            assertThat(moque.receive(FIRST_RESPONSE_QUEUE))
                     .hasText("FirstResponse");
-            assertThat(MOQUE.receive(SECOND_RESPONSE_QUEUE))
+            assertThat(moque.receive(SECOND_RESPONSE_QUEUE))
                     .hasText("SecondResponse to: Trigger");
         });
     }

@@ -13,7 +13,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-public class JmsMoque implements BeforeAllCallback, AfterAllCallback, BeforeEachCallback, AfterEachCallback {
+public class JmsMoque implements BeforeEachCallback, AfterEachCallback {
     private final ConnectionSupplier<Connection> connectionSupplier;
     private Connection connection;
     private Gateway<TextMessage> jmsGateway;
@@ -32,31 +32,16 @@ public class JmsMoque implements BeforeAllCallback, AfterAllCallback, BeforeEach
     }
 
     @Override
-    public void beforeAll(ExtensionContext context) {
+    public void beforeEach(ExtensionContext context) {
         connectionSupplier.beforeAll(context);
 
-        connection = connectionSupplier.get();
         try {
+            connection = connectionSupplier.get();
             connection.start();
-        } catch (JMSException e) {
+        } catch (Exception e) {
             throw new AssertionError(e);
         }
-    }
 
-
-    @Override
-    public void afterAll(ExtensionContext context) {
-        try {
-            connection.close();
-        } catch (JMSException e) {
-            throw new AssertionError(e);
-        } finally {
-            connectionSupplier.afterAll(context);
-        }
-    }
-
-    @Override
-    public void beforeEach(ExtensionContext context) {
         var session = createSession();
 
         jmsGateway = new JmsGateway(session);
@@ -69,6 +54,14 @@ public class JmsMoque implements BeforeAllCallback, AfterAllCallback, BeforeEach
             gatewayConsumer.close();
         }
         listeners.clear();
+
+        try {
+            connection.close();
+        } catch (JMSException e) {
+            throw new AssertionError(e);
+        } finally {
+            connectionSupplier.afterAll(context);
+        }
     }
 
     public WhenReceived<TextMessage> whenReceived(String queueName) {

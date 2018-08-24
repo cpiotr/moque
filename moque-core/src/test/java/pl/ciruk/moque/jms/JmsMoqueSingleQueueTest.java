@@ -16,18 +16,18 @@ class JmsMoqueSingleQueueTest {
     private static final String QUEUE_NAME = "Q1";
 
     @RegisterExtension
-    static final JmsMoque MOQUE = JmsMoque.withEmbeddedServer();
+    JmsMoque moque = JmsMoque.withEmbeddedServer();
 
     @Test
     void shouldRegisterMultipleConsumersWithDifferentPredicates() {
         List<String> received = new ArrayList<>();
         List<String> messagesStartingWithOne = new ArrayList<>();
-        MOQUE.whenReceived(QUEUE_NAME)
+        moque.whenReceived(QUEUE_NAME)
                 .thenConsume(message -> received.add(message.getText()));
-        MOQUE.whenReceived(QUEUE_NAME, message -> message.getText().startsWith("1"))
+        moque.whenReceived(QUEUE_NAME, message -> message.getText().startsWith("1"))
                 .thenConsume(textMessage -> messagesStartingWithOne.add(textMessage.getText()));
 
-        MOQUE.send(QUEUE_NAME, "First");
+        moque.send(QUEUE_NAME, "First");
 
         assertThat(received).containsExactly("First");
         assertThat(messagesStartingWithOne).isEmpty();
@@ -39,15 +39,15 @@ class JmsMoqueSingleQueueTest {
             CountDownLatch listenersTriggered = new CountDownLatch(2);
             List<String> words = new ArrayList<>();
             List<String> messagesStartingWithF = new ArrayList<>();
-            MOQUE.whenReceived(QUEUE_NAME, message -> message.getText().matches("\\w+"))
+            moque.whenReceived(QUEUE_NAME, message -> message.getText().matches("\\w+"))
                     .thenConsume(message -> words.add(message.getText()))
                     .thenDo(listenersTriggered::countDown);
-            MOQUE.whenReceived(QUEUE_NAME, message -> message.getText().startsWith("F"))
+            moque.whenReceived(QUEUE_NAME, message -> message.getText().startsWith("F"))
                     .thenConsume(textMessage -> messagesStartingWithF.add(textMessage.getText()))
                     .thenDo(listenersTriggered::countDown);
 
             String message = "First";
-            MOQUE.send(QUEUE_NAME, message);
+            moque.send(QUEUE_NAME, message);
 
             assertThat(listenersTriggered.await(100, TimeUnit.MILLISECONDS)).isTrue();
             assertThat(words).containsExactly(message);
@@ -59,10 +59,10 @@ class JmsMoqueSingleQueueTest {
     void shouldCountDownWhenReceived() {
         assertTimeout(Duration.ofSeconds(10), () -> {
             CountDownLatch latch = new CountDownLatch(1);
-            MOQUE.whenReceived(QUEUE_NAME)
+            moque.whenReceived(QUEUE_NAME)
                     .thenDo(latch::countDown);
 
-            MOQUE.send(QUEUE_NAME, "Trigger");
+            moque.send(QUEUE_NAME, "Trigger");
 
             assertThat(latch.await(100, TimeUnit.MILLISECONDS)).isTrue();
         });
