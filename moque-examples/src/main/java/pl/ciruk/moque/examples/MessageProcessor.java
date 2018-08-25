@@ -7,6 +7,8 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class MessageProcessor {
+    static final String QUEUE = "mailbox";
+    static final String RESPONSE_QUEUE = "responseQueue";
     private final JmsTemplate jmsTemplate;
 
     @Autowired
@@ -14,9 +16,8 @@ public class MessageProcessor {
         this.jmsTemplate = jmsTemplate;
     }
 
-    @JmsListener(destination = "mailbox")
+    @JmsListener(destination = QUEUE)
     public void receiveMessage(String text) {
-        System.out.println("Received: " + text);
-        jmsTemplate.convertAndSend("responseQueue", "Welp: " + text);
+        jmsTemplate.convertAndSend(RESPONSE_QUEUE, "Welp: " + text);
     }
 }

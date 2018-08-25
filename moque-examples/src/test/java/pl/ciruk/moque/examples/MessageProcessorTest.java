@@ -31,11 +31,10 @@ class MessageProcessorTest {
     @Test
     void shouldRespondToAnotherQueue() throws InterruptedException {
         CountDownLatch countDownLatch = new CountDownLatch(1);
-        jmsMoque.whenReceived("responseQueue")
-                .thenConsume(textMessage -> System.out.println("Response: " + textMessage.getText()))
+        jmsMoque.whenReceived(MessageProcessor.RESPONSE_QUEUE)
                 .thenDo(countDownLatch::countDown);
 
-        jmsTemplate.convertAndSend("mailbox", "First message");
+        jmsTemplate.convertAndSend(MessageProcessor.QUEUE, "First message");
 
         assertThat(countDownLatch.await(1, TimeUnit.SECONDS)).isTrue();
     }
