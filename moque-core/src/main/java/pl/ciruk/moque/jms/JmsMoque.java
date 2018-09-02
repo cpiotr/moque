@@ -17,7 +17,7 @@ public class JmsMoque implements BeforeEachCallback, AfterEachCallback {
     private final ConnectionSupplier<Connection> connectionSupplier;
     private Connection connection;
     private Gateway<TextMessage> jmsGateway;
-    private Map<String, GatewayConsumer<TextMessage>> listeners = new HashMap<>();
+    private Map<String, GatewayConsumer<TextMessage>> gatewayConsumerByQueueName = new HashMap<>();
 
     private JmsMoque(ConnectionSupplier<Connection> connectionSupplier) {
         this.connectionSupplier = connectionSupplier;
@@ -42,25 +42,27 @@ public class JmsMoque implements BeforeEachCallback, AfterEachCallback {
             throw new AssertionError(e);
         }
 
-        var session = createSession();
-
-        jmsGateway = new JmsGateway(session);
+        jmsGateway = new JmsGateway(createSession());
     }
 
     @Override
     public void afterEach(ExtensionContext context) throws Exception {
-        jmsGateway.close();
-        for (var gatewayConsumer : listeners.values()) {
-            gatewayConsumer.close();
-        }
-        listeners.clear();
 
         try {
+            jmsGateway.close();
+            closeGatewayConsumers();
+            gatewayConsumerByQueueName.clear();
             connection.close();
         } catch (JMSException e) {
             throw new AssertionError(e);
         } finally {
             connectionSupplier.afterAll(context);
+        }
+    }
+
+    private void closeGatewayConsumers() throws Exception {
+        for (var gatewayConsumer : gatewayConsumerByQueueName.values()) {
+            gatewayConsumer.close();
         }
     }
 
@@ -70,7 +72,9 @@ public class JmsMoque implements BeforeEachCallback, AfterEachCallback {
 
     public WhenReceived<TextMessage> whenReceived(String queueName, ThrowingPredicate<TextMessage> messageMatcher) {
         var session = createSession();
-        GatewayConsumer<TextMessage> gatewayConsumer = listeners.computeIfAbsent(queueName, __ -> createConsumer(queueName, session));
+        GatewayConsumer<TextMessage> gatewayConsumer = gatewayConsumerByQueueName.computeIfAbsent(
+                queueName,
+                __ -> createConsumer(queueName, session));
 
         WhenReceived<TextMessage> whenReceived = new WhenReceived<>(new JmsGateway(session), messageMatcher);
         gatewayConsumer.addWhenReceivedRule(whenReceived);
