@@ -15,6 +15,7 @@ dependencies {
     compile "org.junit.jupiter:junit-jupiter-api:$junit_version"
 
     testCompile "org.assertj:assertj-core:$assertj_version"
+    testCompile "org.mockito:mockito-core:$mockito_version"
     testRuntimeOnly(
             "org.junit.jupiter:junit-jupiter-engine:$junit_version",
             "org.junit.vintage:junit-vintage-engine:$junit_version"
