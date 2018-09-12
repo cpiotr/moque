@@ -19,6 +19,11 @@ public class JmsMoque implements BeforeEachCallback, AfterEachCallback {
     private Gateway<TextMessage> jmsGateway;
     private Map<String, GatewayConsumer<TextMessage>> gatewayConsumerByQueueName = new HashMap<>();
 
+    private JmsMoque() {
+        throw new AssertionError("Extension must be registered manually using @RegisterExtension " +
+                "and instantiated with withEmbeddedServer() or withConnectionSupplier()");
+    }
+
     private JmsMoque(ConnectionSupplier<Connection> connectionSupplier) {
         this.connectionSupplier = connectionSupplier;
     }
@@ -47,7 +52,6 @@ public class JmsMoque implements BeforeEachCallback, AfterEachCallback {
 
     @Override
     public void afterEach(ExtensionContext context) throws Exception {
-
         try {
             jmsGateway.close();
             closeGatewayConsumers();
