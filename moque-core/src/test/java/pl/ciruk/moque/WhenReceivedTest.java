@@ -93,6 +93,27 @@ class WhenReceivedTest {
         verifyZeroInteractions(gateway);
     }
 
+    @Test
+    void shouldPerformAllOperationsWhenPredicateMatches() throws Exception {
+        Runnable runnable = mock(Runnable.class);
+        ThrowingConsumer<String> consumer = mock(ThrowingConsumer.class);
+        ThrowingPredicate<String> predicate = mock(ThrowingPredicate.class);
+        when(predicate.test(anyString())).thenReturn(true);
+        Gateway<String> gateway = mockGateway();
+        String response = "Response";
+        String message = "Test";
+        var whenReceived = new WhenReceived<>(gateway, predicate)
+                .thenSend(RESPONSE_QUEUE, response)
+                .thenDo(runnable)
+                .thenConsume(consumer);
+
+        whenReceived.onMessage(message);
+
+        verify(gateway).send(RESPONSE_QUEUE, response);
+        verify(runnable).run();
+        verify(consumer).accept(message);
+    }
+
     @SuppressWarnings("unchecked")
     private static Gateway<String> mockGateway() {
         return mock(Gateway.class);
