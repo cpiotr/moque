@@ -20,6 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class MessageProcessorTest {
 
     private static final String ANOTHER_QUEUE = "AnotherQueue";
+
     @Autowired
     private ConnectionFactory connectionFactory;
 

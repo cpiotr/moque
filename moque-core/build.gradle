@@ -9,9 +9,13 @@ repositories {
 
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+
     compile "javax.jms:javax.jms-api:$jms_version"
     compile "org.apache.activemq:apache-artemis:$activemq_version"
     compile "commons-beanutils:commons-beanutils:$beanutils_version"
+
+    compile "org.apache.kafka:kafka-clients:$kafka_version"
+
     compile "org.junit.jupiter:junit-jupiter-api:$junit_version"
 
     testCompile "org.assertj:assertj-core:$assertj_version"
