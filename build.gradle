@@ -13,7 +13,9 @@ version '1.0-SNAPSHOT'
 apply plugin: 'kotlin'
 apply plugin: 'java'
 
-sourceCompatibility = 1.10
+allprojects {
+    sourceCompatibility = 1.11
+}
 
 repositories {
     mavenCentral()
@@ -27,5 +29,5 @@ compileTestKotlin {
 }
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '4.10'
+    gradleVersion = '5.1'
 }
