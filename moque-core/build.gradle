@@ -29,8 +29,8 @@ test {
 
 
 compileKotlin {
-    kotlinOptions.jvmTarget = "1.8"
+    kotlinOptions.jvmTarget = "$java_version_for_kotlin"
 }
 compileTestKotlin {
-    kotlinOptions.jvmTarget = "1.8"
+    kotlinOptions.jvmTarget = "$java_version_for_kotlin"
 }
